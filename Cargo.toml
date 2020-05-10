@@ -1,0 +1,23 @@
+[package]
+name = "sentence"
+version = "0.0.1"
+edition = "2018"
+description = "Sentence tokenizes English language sentences for use in TTS applications."
+keywords = ["sentence", "english", "TTS", "tokenization"]
+authors = [ 
+  "Brandon Thomas <bt@brand.io>",
+  "Brandon Thomas <echelon@gmail.com>",
+]
+license = "BSD-4-Clause"
+repository = "https://github.com/echelon/sentence.rs"
+documentation = "https://docs.rs/sentence"
+readme = "README.md"
+
+[badges]
+maintenance = { status = "passively-maintained" }
+travis-ci = { repository = "echelon/sentence.rs" }
+codecov = { repository = "echelon/sentence.rs", service = "github" }
+
+[dependencies]
+lazy_static = "1.4.0"
+regex = "1.3.7"
