@@ -1,6 +1,6 @@
 [package]
 name = "sentence"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2018"
 description = "Sentence tokenizes English language sentences for use in TTS applications."
 keywords = ["sentence", "english", "TTS", "tokenization"]
