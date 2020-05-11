@@ -1,12 +1,16 @@
 sentence
 ========
-A library for lexing English langauge sentences into semantic tokens for
+A library for lexing English language sentences into semantic tokens for
 input into TTS systems. This helps for models that can't be trained on
 unstructured input.
 
 This is loosely based on some old Rust code I wrote that needs to be modernized.
 There are a number of things I still want to add (dictionary lookup),
 and the code is definitely not efficient at present.
+
+[![Package](https://img.shields.io/crates/v/sentence.svg)](https://crates.io/crates/sentence)
+[![Build Status](https://travis-ci.org/echelon/sentence.rs.svg?branch=master)](https://travis-ci.org/echelon/sentence.rs)
+[![codecov](https://codecov.io/gh/echelon/sentence.rs/branch/master/graph/badge.svg)](https://codecov.io/gh/echelon/sentence.rs)
 
 Feature road map
 ----------------
@@ -18,7 +22,6 @@ The following are not yet implemented:
 - CamelCaseStrings
 - currency / prices
 - emoji, emoticons
-- hyphenated strings
 - ordinals, ratios
 - etc.
 
