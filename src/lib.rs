@@ -65,6 +65,9 @@ pub enum Token {
   CommaFormattedRealNumber(String),
   /// Twitter-style hashtag, which matches '^#\w+$'.
   Hashtag(String),
+  /// A hyphenated word matches '^([A-Za-z]+\-)+[A-Za-z]+$'.
+  /// If the word isn't in your dictionary, perhaps splitting by hyphens will help.
+  HyphenatedWord(String),
   /// A simple integer. Matches '\d+'
   Integer(String),
   /// A punctuation mark.
@@ -75,7 +78,7 @@ pub enum Token {
   Url(String),
   /// Twitter-style username mention, which matches '^@\w+'
   UsernameMention(String),
-  /// A word matches '[\w-\.]+'.
+  /// A word matches '^\w+$'.
   Word(String),
   /// A sequence that doesn't match any other pattern. Catch-all.
   Unknown(String),
@@ -234,6 +237,7 @@ impl SentenceTokenizer {
   fn parse_words_etc(tokens: &mut Vec<Token>) {
     lazy_static! {
       static ref WORD : Regex = Regex::new(r"^\w+$").unwrap();
+      static ref HYPHENATED_WORD : Regex = Regex::new(r"^([A-Za-z]+\-)+[A-Za-z]+$").unwrap();
       static ref URL : Regex = Regex::new(r"^http(s)?://(\w+\.)+(\w+)/?([\w/#\?&=\.])*$").unwrap();
       static ref USERNAME : Regex = Regex::new(r"^@\w+$").unwrap();
       static ref HASHTAG : Regex = Regex::new(r"^#\w+$").unwrap();
@@ -253,6 +257,9 @@ impl SentenceTokenizer {
           }
           else if WORD.is_match(value) {
             *token = Token::Word(value.clone()); // TODO: Move instead.
+          }
+          else if HYPHENATED_WORD.is_match(value) {
+            *token = Token::HyphenatedWord(value.clone()); // TODO: Move instead.
           }
         },
         _ => continue,
@@ -290,6 +297,27 @@ mod tests {
       Token::Word("is".into()),
       Token::Word("a".into()),
       Token::Word("sentence".into()),
+      Token::Punctuation(Punctuation::Period),
+    ]);
+  }
+
+  #[test]
+  fn hyphenated_words() {
+    let sentence = "Please double-check the drive-thru";
+    assert_eq!(tokenize(sentence), vec![
+      Token::Word("Please".into()),
+      Token::HyphenatedWord("double-check".into()),
+      Token::Word("the".into()),
+      Token::HyphenatedWord("drive-thru".into()),
+    ]);
+    let sentence = "Please double-check the drive-thru - pretty-please.";
+    assert_eq!(tokenize(sentence), vec![
+      Token::Word("Please".into()),
+      Token::HyphenatedWord("double-check".into()),
+      Token::Word("the".into()),
+      Token::HyphenatedWord("drive-thru".into()),
+      Token::Punctuation(Punctuation::Dash),
+      Token::HyphenatedWord("pretty-please".into()),
       Token::Punctuation(Punctuation::Period),
     ]);
   }
@@ -564,8 +592,13 @@ mod tests {
     let _ = tokenize("yes!!!!!");
     let _ = tokenize("yes!!!!1??");
     let _ = tokenize("iOHuijahdfkjq2nero88u928nkjwfn  qio23u980HjkH@!J#Kj1j 1j4o2o");
-    let _ = tokenize("one-two");
     let _ = tokenize("dashes--emdash");
+    let _ = tokenize("This does not work!?");
+    let _ = tokenize("haven't, how're, she'll, isn't, it'll, it'd, donald's");
+    let _ = tokenize("might've, they'd, weren't, o'neill's, o'grady's");
+    let _ = tokenize("'nuff, 'em, o'clock, will-o'-the-wisp");
+    let _ = tokenize("I'm sorry you can't do it.");
+    let _ = tokenize("That is \"good\" enough");
   }
 
   fn tokenize(sentence: &str) -> Vec<Token> {
