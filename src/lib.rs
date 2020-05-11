@@ -59,6 +59,10 @@ pub enum Punctuation {
 /// A parsed token
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
+  // TODO: We don't want to catch single quotes
+  /// An word with apostrophes matches "^'?([A-Za-z]+'?)+$".
+  /// This should work for contractions, possessives, and plurals.
+  ApostrophenatedWord(String),
   /// A comma-formatted integer. Like Integer, but has comma separators.
   CommaFormattedInteger(String),
   /// A comma-formatted real number. Like RealNumber, but has comma separators.
@@ -238,6 +242,7 @@ impl SentenceTokenizer {
     lazy_static! {
       static ref WORD : Regex = Regex::new(r"^\w+$").unwrap();
       static ref HYPHENATED_WORD : Regex = Regex::new(r"^([A-Za-z]+\-)+[A-Za-z]+$").unwrap();
+      static ref APOSTROPHENATED_WORD: Regex = Regex::new(r"^'?([A-Za-z]+'?)+$").unwrap();
       static ref URL : Regex = Regex::new(r"^http(s)?://(\w+\.)+(\w+)/?([\w/#\?&=\.])*$").unwrap();
       static ref USERNAME : Regex = Regex::new(r"^@\w+$").unwrap();
       static ref HASHTAG : Regex = Regex::new(r"^#\w+$").unwrap();
@@ -260,6 +265,9 @@ impl SentenceTokenizer {
           }
           else if HYPHENATED_WORD.is_match(value) {
             *token = Token::HyphenatedWord(value.clone()); // TODO: Move instead.
+          }
+          else if APOSTROPHENATED_WORD.is_match(value) {
+            *token = Token::ApostrophenatedWord(value.clone()); // TODO: Move instead.
           }
         },
         _ => continue,
@@ -319,6 +327,54 @@ mod tests {
       Token::Punctuation(Punctuation::Dash),
       Token::HyphenatedWord("pretty-please".into()),
       Token::Punctuation(Punctuation::Period),
+    ]);
+  }
+
+  #[test]
+  fn apostrophe_words() {
+    let sentence = "Gotta catch 'em all.";
+    assert_eq!(tokenize(sentence), vec![
+      Token::Word("Gotta".into()),
+      Token::Word("catch".into()),
+      Token::ApostrophenatedWord("'em".into()),
+      Token::Word("all".into()),
+      Token::Punctuation(Punctuation::Period),
+    ]);
+    let sentence = "It ain't you, darlin'";
+    assert_eq!(tokenize(sentence), vec![
+      Token::Word("It".into()),
+      Token::ApostrophenatedWord("ain't".into()),
+      Token::Word("you".into()),
+      Token::Punctuation(Punctuation::Comma),
+      Token::ApostrophenatedWord("darlin'".into()),
+    ]);
+    let sentence = "That isn't freakin'.";
+    assert_eq!(tokenize(sentence), vec![
+      Token::Word("That".into()),
+      Token::ApostrophenatedWord("isn't".into()),
+      Token::ApostrophenatedWord("freakin'".into()),
+      Token::Punctuation(Punctuation::Period),
+    ]);
+    let sentence = "How're y'all doin' at the O'Grady's'?";
+    assert_eq!(tokenize(sentence), vec![
+      Token::ApostrophenatedWord("How're".into()),
+      Token::ApostrophenatedWord("y'all".into()),
+      Token::ApostrophenatedWord("doin'".into()),
+      Token::Word("at".into()),
+      Token::Word("the".into()),
+      Token::ApostrophenatedWord("O'Grady's'".into()),
+      Token::Punctuation(Punctuation::Question),
+    ]);
+    let sentence = "'nuff said";
+    assert_eq!(tokenize(sentence), vec![
+      Token::ApostrophenatedWord("'nuff".into()),
+      Token::Word("said".into()),
+    ]);
+    let sentence = "It's 5 o'clock";
+    assert_eq!(tokenize(sentence), vec![
+      Token::ApostrophenatedWord("It's".into()),
+      Token::Integer("5".into()),
+      Token::ApostrophenatedWord("o'clock".into()),
     ]);
   }
 
@@ -594,9 +650,7 @@ mod tests {
     let _ = tokenize("iOHuijahdfkjq2nero88u928nkjwfn  qio23u980HjkH@!J#Kj1j 1j4o2o");
     let _ = tokenize("dashes--emdash");
     let _ = tokenize("This does not work!?");
-    let _ = tokenize("haven't, how're, she'll, isn't, it'll, it'd, donald's");
-    let _ = tokenize("might've, they'd, weren't, o'neill's, o'grady's");
-    let _ = tokenize("'nuff, 'em, o'clock, will-o'-the-wisp");
+    let _ = tokenize("will-o'-the-wisp");
     let _ = tokenize("I'm sorry you can't do it.");
     let _ = tokenize("That is \"good\" enough");
   }
